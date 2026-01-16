@@ -17,72 +17,56 @@ library(BrAPI)
 # These are defined in the BrAPI R library
 #
 DATABASES = getBrAPIConnections()
-DATABASES$`T3/WheatCAP` = createBrAPIConnection("wheatcap.triticeaetoolbox.org")
 DATABASES = DATABASES[order(names(DATABASES))]
 
 
 #
-# PHENOTYPE DATA PANEL
+# DATA PANEL
 #
-phenotypePanel = fluidPage(
+dataPanel = fluidPage(
 
   # Create a Row with two Columns
   fluidRow(
 
     # The left column has the trial selection and analysis parameter inputs
-    column(4,
+    column(6,
 
       # Download Data via BrAPI
       wellPanel( 
         h3("Fetch Data from Database"),
-        p("Select trials from a BrAPI-compliant database to fetch for the analysis."),
+        p("Select Genotype Projects to use in the analysis."),
         
         # Dropdown menus for selecting the input trials
         # The choices for the database come from the BrAPI library
         # The choices for the breeding program will be added when the database is selected (in server.R)
         # The choices for the trials will be added when a breeding program is selected (in server.R)
         selectInput("database", "Database", choices = c("", names(DATABASES)), width="100%"),
-        selectInput("breeding_program", "Breeding Program", choices = c(), width="100%"),
-        selectInput("trials", "Trials", choices = c(), width="100%", multiple=TRUE, selectize=FALSE),
+        selectInput("genotyping_projects", "Genotyping Projects", choices = c(), width="100%", multiple=TRUE, selectize=FALSE),
 
         # Buttons to add / remove trials
         fluidRow(
-          column(6, actionButton("add_trials", "Add Trials to Selection")),
-          column(6, actionButton("remove_trials", "Remove All Selected Trials"))
+          column(6, actionButton("add_projects", "Add Genotyping Projects to Selection")),
+          column(6, actionButton("remove_projects", "Remove All Selected Genotyping Projects"))
         ),
         
         tags$hr(),
 
         # Button to download trials
         actionButton(
-          "fetch_trials",
-          "Fetch Phenotype Data for Selected Trials",
+          "fetch_archived_vcf",
+          "Download VCF for Selected Projects",
           icon("database"),
           style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
         )
         
       ),
 
-      # Upload Data from File
-      wellPanel(
-        h3("Upload Data from Files"),
-        p("Upload previously saved data files for use in the analysis."),
-
-        fileInput("upload_phenotype_data", "Upload Phenotype Data")
-      )
-
     ),
 
     # The right column has a table of the selected trials
-    column(8,
-      h3("Selected Trials"),
-      dataTableOutput("selected_trials"),
-
-      tags$hr(),
-
-      h3("Phenotype Data"),
-      downloadButton("download_phenotype_data", "Download Phenotype Data"),
-      dataTableOutput("phenotype_data")
+    column(4,
+      h3("Selected Genotyping Projects"),
+      dataTableOutput("selected_projects"),
     ),
 
     style = "margin-top: 80px"
@@ -98,7 +82,7 @@ genotypePanel = fluidPage(
   fluidRow(
 
     # Left column: genotype file selection
-    column(4,
+    column(6,
 
       # Upload Data from File
       wellPanel(
@@ -136,14 +120,14 @@ analysisPanel = fluidPage(
       wellPanel(
 
         h4("Step 1"),
-        p("Select one or more traits to include in the analysis"),
-        selectInput("traits", "Traits", choices = c(), width="100%", multiple=TRUE, selectize=FALSE),
-
+        p("Quality Control"),
+        actionButton("start_qc", "Start Quality Control"),
+        
         hr(),
 
         h4("Step 2"),
-        p("Start the analysis"),
-        actionButton("start_analysis", "Start Analysis")
+        p("Combine GRMs"),
+        actionButton("start_combine", "Start Combine GRMs")
 
       )
     ),
@@ -153,17 +137,10 @@ analysisPanel = fluidPage(
       h3("Analysis Results"),
 
       hr(),
-      h4("BLUE Output"),
-      dataTableOutput("blue_results"),
-
-      hr(),
-      h4("Genomic Relationship Matrix"),
-      dataTableOutput("grm_results"),
-
-      hr(),
-      h4("GEBVs"),
-      dataTableOutput("gebv_g_results"),
-      dataTableOutput("gebv_gxe_results")
+      h4("GRM Results"),
+      dataTableOutput("psi_results"),
+      
+      downloadButton('download',"Download the GRM"),
 
     ),
 
@@ -183,11 +160,10 @@ analysisPanel = fluidPage(
 ui = navbarPage(
 
   # Toolbar title
-  title = "T3/Breedbase BrAPI Test",
+  title = "CovComb Analysis",
 
   # Navigation panels
-  tabPanel("Phenotype Data", phenotypePanel, icon = icon("wheat-awn")),
-  tabPanel("Genotype Data", genotypePanel, icon = icon("dna")),
+  tabPanel("Select Data", dataPanel, icon = icon("dna")),
   tabPanel("Run Analysis", analysisPanel, icon = icon("play")),
 
   # Set the navbar to be "sticky" at the top

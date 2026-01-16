@@ -3,8 +3,9 @@ library(BrAPI)
 library(tidyverse)
 
 source("utils/inputEventObservers.R")
-source("utils/getPhenotypeData.R")
-source("analyses/spatial_analysis.R")
+source("analyses/em_covariance_combiner.R")
+source("analyses/Estimate_GRM_list.R")
+source("analyses/Estimate_combinedGRM.R")
 
 
 # ====================================================== #
@@ -26,33 +27,14 @@ server = function(input, output, session) {
   # selected trials and their downloaded phenotypes
   #
   data = reactiveValues(
-    bp_trials = list(),
-    selected_trials = tibble(
-      studyDbId = numeric(),
-      studyName = character(),
-      programName = character(),
-      year = character(),
-      locationName = character()
+    all_projects = list(),
+    selected_projects = tibble(
+      projectId = numeric(),
+      projectName = character()
     ),
-    phenotype_data = tibble(
-      studyDbId = numeric(),
-      studyName = character(),
-      programName = character(),
-      year = character(),
-      locationName = character(),
-      observationUnitDbId = numeric(),
-      observationUnitName = character(),
-      germplasmDbId = numeric(),
-      germplasmName = character(),
-      rowNumber = numeric(),
-      colNumber = numeric(),
-      plot = character(),
-      rep = character(),
-      block = character()
-    ),
-    genotype_data = tibble(
-      marker = character()
-    )
+    archived_vcf_files = c(),
+    k_list = list(),
+    psi = tibble()
   )
 
 
@@ -63,39 +45,39 @@ server = function(input, output, session) {
   observeEvent(input$database, onDatabaseChange(input, output, session, data))
 
 
-  #
-  # HANDLER: Breeding Program Selection
-  # Update the choices for trials when the selected breeding program changes
-  #
-  observeEvent(input$breeding_program, onBreedingProgramChange(input, output, session, data))
-
 
   #
-  # HANDLER: Add Trials Button
+  # HANDLER: Add Projects Button
   # Add the user-selected trials to the table
   #
-  observeEvent(input$add_trials, onAddTrials(input, output, session, data))
+  observeEvent(input$add_projects, onAddProjects(input, output, session, data))
 
 
   #
-  # HANDLER: Remove Trials Button
+  # HANDLER: Remove Projects Button
   # Clear all selected trials from the table
   #
-  observeEvent(input$remove_trials, onRemoveTrials(input, output, session, data))
+  observeEvent(input$remove_projects, onRemoveProjects(input, output, session, data))
 
 
   #
-  # HANDLER: Retrieve Phenotypes
+  # HANDLER: Download Archived VCF
   # Download all observations for all selected trials
   #
-  observeEvent(input$fetch_trials, getPhenotypeData(input, output, session, data))
+  observeEvent(input$fetch_archived_vcf, getArchivedVCF(input, output, session, data))
 
 
   #
-  # HANDLER: Upload Phenotypes
+  # HANDLER: Start QC
   # Allow the user to upload a table of phenotypes, parse as data$phenotype_data
   #
-  observeEvent(input$upload_phenotype_data, onUploadPhenotypeData(input, output, session, data))
+  observeEvent(input$start_qc, startQC(input, output, session, data))
+  
+  #
+  # HANDLER: Start Combine
+  # Allow the user to upload a table of phenotypes, parse as data$phenotype_data
+  #
+  observeEvent(input$start_combine, startCombine(input, output, session, data))
 
 
   #
