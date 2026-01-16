@@ -28,7 +28,7 @@ dataPanel = fluidPage(
   # Create a Row with two Columns
   fluidRow(
 
-    # The left column has the trial selection and analysis parameter inputs
+    # The left column has the database and genotype project selection
     column(6,
 
       # Download Data via BrAPI
@@ -36,76 +36,58 @@ dataPanel = fluidPage(
         h3("Fetch Data from Database"),
         p("Select Genotype Projects to use in the analysis."),
         
-        # Dropdown menus for selecting the input trials
+        # Dropdown menus for selecting the input data
         # The choices for the database come from the BrAPI library
-        # The choices for the breeding program will be added when the database is selected (in server.R)
-        # The choices for the trials will be added when a breeding program is selected (in server.R)
-        selectInput("database", "Database", choices = c("", names(DATABASES)), width="100%"),
-        selectInput("genotyping_projects", "Genotyping Projects", choices = c(), width="100%", multiple=TRUE, selectize=FALSE),
+        # The choices for the genotyping projects will be updated when a database is selected
+        selectInput("selectDatabase", "Database", choices = c("", names(DATABASES)), width="100%"),
+        selectInput("selectProjects", "Genotyping Projects", choices = c(), width="100%", multiple=TRUE, selectize=FALSE),
 
-        # Buttons to add / remove trials
-        fluidRow(
-          column(6, actionButton("add_projects", "Add Genotyping Projects to Selection")),
-          column(6, actionButton("remove_projects", "Remove All Selected Genotyping Projects"))
+        # Button to add projects to selection
+        actionButton(
+          "addProjects", 
+          "Add Genotyping Projects to Selection",
+          icon("check")
         ),
         
         tags$hr(),
 
-        # Button to download trials
+        # Button to download data
         actionButton(
-          "fetch_archived_vcf",
+          "downloadVCF",
           "Download VCF for Selected Projects",
-          icon("database"),
+          icon("download"),
           style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
-        )
+        ),
+        
+        tags$hr(),
+        
+        h3("Downloaded VCF Files:"),
+        htmlOutput("availableVCF") 
         
       ),
 
     ),
 
-    # The right column has a table of the selected trials
+    # The right column has a table of the selected projects
     column(4,
       h3("Selected Genotyping Projects"),
-      dataTableOutput("selected_projects"),
-    ),
-
-    style = "margin-top: 80px"
-  )
-)
-
-#
-# GENOTYPE DATA PANEL
-#
-genotypePanel = fluidPage(
-
-  # A row with two columns
-  fluidRow(
-
-    # Left column: genotype file selection
-    column(6,
-
-      # Upload Data from File
-      wellPanel(
-        h3("Upload Data from Files"),
-        p("Upload a Dosage Matrix file for use in the analysis."),
-
-        fileInput("upload_genotype_data", "Upload Marker Data")
+      dataTableOutput("selectedProjects"),
+      
+      tags$hr(),
+      
+      # Button to clear selected projects
+      actionButton(
+        "removeProjects",
+        "Remove All Selected Genotyping Projects",
+        icon("eraser"),
+        style = "color: #fff; background-color: #dc3545; border-color: #c11626"
       )
-
-    ),
-
-    # Right column:
-    column(8,
-
-      h3("Genotype Data"),
-      dataTableOutput("genotype_data")
-
     ),
 
     style = "margin-top: 80px"
   )
-
 )
+
 
 #
 # ANALYSIS PANEL
@@ -115,32 +97,32 @@ analysisPanel = fluidPage(
   # A row with two columns
   fluidRow(
 
-    # Left column: button to download phenotypes
+    # Left column: buttons to run each step
     column(3,
       wellPanel(
 
         h4("Step 1"),
         p("Quality Control"),
-        actionButton("start_qc", "Start Quality Control"),
+        actionButton("startQC", "Start Quality Control"),
         
         hr(),
 
         h4("Step 2"),
         p("Combine GRMs"),
-        actionButton("start_combine", "Start Combine GRMs")
+        actionButton("startCombine", "Start Combine GRMs")
 
       )
     ),
 
-    # Right column: table of selected phenotypes
+    # Right column: display of results
     column(9,
       h3("Analysis Results"),
 
       hr(),
       h4("GRM Results"),
-      dataTableOutput("psi_results"),
+      dataTableOutput("resultsGRM"),
       
-      downloadButton('download',"Download the GRM"),
+      downloadButton('downloadGRM',"Download the GRM"),
 
     ),
 
@@ -163,7 +145,7 @@ ui = navbarPage(
   title = "CovComb Analysis",
 
   # Navigation panels
-  tabPanel("Select Data", dataPanel, icon = icon("dna")),
+  tabPanel("Select Data", dataPanel, icon = icon("database")),
   tabPanel("Run Analysis", analysisPanel, icon = icon("play")),
 
   # Set the navbar to be "sticky" at the top

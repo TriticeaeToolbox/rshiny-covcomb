@@ -6,7 +6,7 @@
 #Set condition to continue combining the genomic relationship matrix 
 
 
-perform_combine = function(K_list) {
+runCombine = function(K_list) {
   
   acc_com_list <- list()
   Tot_acc <- c()
@@ -46,6 +46,7 @@ perform_combine = function(K_list) {
   rownames(combcov$psi) <- Tot_acc
   colnames(combcov$psi) <- Tot_acc
   
+  showNotification("GRM combination complete", duration=30, type="message")
   return(combcov$psi)
   
 }
